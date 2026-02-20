@@ -8,75 +8,89 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * Utility to load native libraries from the classpath.
  * It extracts the appropriate library for the current OS/Arch to a temporary directory.
  */
 public class NativeLibraryLoader {
-
+    
+    private record PlatformInfo(String platform, String extension, String prefix) {}
+    
     public static SymbolLookup loadLibrary(String libBaseName) {
         String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-	    
-	    
-	    String platform;
-        String extension;
-        String prefix = "";
-
-        if (os.contains("win")) {
-            platform = "windows-x64";
-            extension = ".dll";
-        } else if (os.contains("linux")) {
-            platform = "linux-x64";
-            extension = ".so.10";
-            prefix = "lib";
-        } else {
-            throw new RuntimeException("Unsupported OS: " + os);
-        }
-
-        // Adjust libName based on OS conventions if necessary
-        String libName = prefix + libBaseName;
-        if (libBaseName.equals("nice")) {
-             if (os.contains("win")) {
-                 libName = "libnice-10";
-             } else {
-                 libName = "libnice";
-             }
-        }
-
-        String resourcePath = "/natives/" + platform + "/" + libName + extension;
+        PlatformInfo platformInfo = resolvePlatformInfo(os);
+        String libName = resolveLibName(libBaseName, os, platformInfo.prefix());
+        String resourcePath = buildResourcePath(platformInfo.platform(), libName, platformInfo.extension());
+        
         System.out.println("Attempting to load native library from resource: " + resourcePath);
         
-        try (InputStream is = NativeLibraryLoader.class.getResourceAsStream(resourcePath)) {
-            if (is == null) {
-                // Try to find ANY libnice.so* if exact match fails for Linux
-                if (os.contains("linux")) {
-                    // This is harder since we can't easily list resources in a JAR/classpath directory.
-                    // But we can try common version strings or just the base .so
-                    String[] fallbacks = {"/natives/" + platform + "/libnice.so.10.15.0", "/natives/" + platform + "/libnice.so"};
-                    for (String fallback : fallbacks) {
-                        InputStream fis = NativeLibraryLoader.class.getResourceAsStream(fallback);
-                        if (fis != null) {
-                            System.out.println("Found fallback native library: " + fallback);
-                            return extractAndLoad(fis, libName, extension, fallback);
-                        }
-                    }
-                }
-
-                // Try searching without leading slash if using classloader directly
-                InputStream is2 = NativeLibraryLoader.class.getClassLoader().getResourceAsStream(resourcePath.substring(1));
-                if (is2 != null) {
-                    return extractAndLoad(is2, libName, extension, resourcePath);
-                }
-                throw new IOException("Native library not found in classpath: " + resourcePath);
-            }
-
-            return extractAndLoad(is, libName, extension, resourcePath);
+        try {
+            InputStream is = resolveInputStream(resourcePath, libName, platformInfo.platform(), os);
+            return extractAndLoad(is, libName, platformInfo.extension(), resourcePath);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load native library: " + resourcePath + ". Error: " + e.getMessage(), e);
         }
     }
-
+    
+    private static PlatformInfo resolvePlatformInfo(String os) {
+        if (os.contains("win")) {
+            return new PlatformInfo("windows-x64", ".dll", "");
+        } else if (os.contains("linux")) {
+            return new PlatformInfo("linux-x64", ".so.10", "lib");
+        }
+        throw new RuntimeException("Unsupported OS: " + os);
+    }
+    
+    private static String resolveLibName(String libBaseName, String os, String prefix) {
+        if (!libBaseName.equals("nice")) {
+            return prefix + libBaseName;
+        }
+        return os.contains("win") ? "libnice-10" : "libnice";
+    }
+    
+    private static String buildResourcePath(String platform, String libName, String extension) {
+        return "/natives/" + platform + "/" + libName + extension;
+    }
+    
+    private static InputStream resolveInputStream(String resourcePath, String libName, String platform, String os) throws IOException {
+        InputStream is = NativeLibraryLoader.class.getResourceAsStream(resourcePath);
+        if (is != null) {
+            return is;
+        }
+        
+        if (os.contains("linux")) {
+            Optional<InputStream> fallback = tryLinuxFallbacks(platform);
+            if (fallback.isPresent()) {
+                return fallback.get();
+            }
+        }
+        
+        InputStream classloaderStream = NativeLibraryLoader.class.getClassLoader()
+                                                .getResourceAsStream(resourcePath.substring(1));
+        if (classloaderStream != null) {
+            return classloaderStream;
+        }
+        
+        throw new IOException("Native library not found in classpath: " + resourcePath);
+    }
+    
+    private static Optional<InputStream> tryLinuxFallbacks(String platform) {
+        String[] fallbacks = {
+                "/natives/" + platform + "/libnice.so.10.15.0",
+                "/natives/" + platform + "/libnice.so"
+        };
+        for (String fallback : fallbacks) {
+            InputStream fis = NativeLibraryLoader.class.getResourceAsStream(fallback);
+            if (fis != null) {
+                System.out.println("Found fallback native library: " + fallback);
+                return Optional.of(fis);
+            }
+        }
+        return Optional.empty();
+    }
+    
     private static SymbolLookup extractAndLoad(InputStream is, String libName, String extension, String resourcePath) throws IOException {
         Path tempDir = Files.createTempDirectory("java-ice-natives-");
         tempDir.toFile().deleteOnExit();
@@ -84,7 +98,7 @@ public class NativeLibraryLoader {
         Path tempFile = tempDir.resolve(libName + extension);
         Files.copy(is, tempFile, StandardCopyOption.REPLACE_EXISTING);
         tempFile.toFile().deleteOnExit();
-
+        
         System.out.println("Extracted native library from " + resourcePath + " to: " + tempFile);
         
         return SymbolLookup.libraryLookup(tempFile, Arena.global());
