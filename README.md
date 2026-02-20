@@ -36,6 +36,26 @@ When you call `parseRemoteSdp()`, JavaICE feeds the remote candidates into the n
 
 ---
 
+# Standards & Technical Specifications
+
+JavaICE (via libnice) implements a comprehensive suite of IETF standards for robust NAT traversal and peer-to-peer connectivity.
+
+### Core ICE Standards
+- **[RFC 8445](https://tools.ietf.org/html/rfc8445)**: Interactive Connectivity Establishment (ICE) — *The primary standard for P2P connectivity.*
+- **[RFC 5245](https://tools.ietf.org/html/rfc5245)**: ICE (Legacy) — *Maintains compatibility with older ICE implementations.*
+- **[RFC 8838](https://tools.ietf.org/html/rfc8838)**: Trickle ICE — *Incremental provisioning of candidates for faster connection setup.*
+
+### STUN & TURN
+- **[RFC 5389](https://tools.ietf.org/html/rfc5389)**: Session Traversal Utilities for NAT (STUN).
+- **[RFC 5766](https://tools.ietf.org/html/rfc5766)**: Traversal Using Relays around NAT (TURN) — *Relay participation for restrictive NATs.*
+- **[RFC 7675](https://tools.ietf.org/html/rfc7675)**: STUN Consent Freshness — *Ensures the remote peer is still willing to receive data.*
+
+### Transport & SDP
+- **[RFC 6544](https://tools.ietf.org/html/rfc6544)**: TCP Candidates with ICE (ICE-TCP).
+- **[RFC 4566](https://tools.ietf.org/html/rfc4566)** / **[RFC 8866](https://tools.ietf.org/html/rfc8866)**: Session Description Protocol (SDP).
+
+---
+
 # 1. Install MSYS2
 
 1. Download MSYS2 from:
