@@ -21,6 +21,48 @@
                 <configuration>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-natives-windows</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/natives/windows-x64</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../libnice/build-x-win64/nice</directory>
+                                    <includes>
+                                        <include>libnice-10.dll</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-natives-linux</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/natives/linux-x64</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../libnice/build-x-linux/nice</directory>
+                                    <includes>
+                                        <include>libnice.so*</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

@@ -16,21 +16,14 @@ public class NiceBindings {
     private static final Linker LINKER = Linker.nativeLinker();
     static {
         SymbolLookup lookup = null;
-        String[] libNames = {"libnice-10", "nice-10", "libnice"};
-//        String customPath = "./libnice/build-x-win64/nice/libnice-10.dll"; // windows
-        String customPath = "./libnice/build-x-linux/nice/libnice.so.10"; // linux
-
-        if (customPath != null) {
-            try {
-                lookup = SymbolLookup.libraryLookup(java.nio.file.Path.of(customPath), Arena.global());
-                System.out.println("libnice loaded from custom path: " + customPath);
-            } catch (Exception e) {
-                System.err.println("Failed to load libnice from custom path: " + customPath);
-                e.printStackTrace();
-            }
+        try {
+            lookup = NativeLibraryLoader.loadLibrary("nice");
+        } catch (Exception e) {
+            System.err.println("Failed to load libnice using NativeLibraryLoader: " + e.getMessage());
         }
 
         if (lookup == null) {
+            String[] libNames = {"libnice-10", "nice-10", "libnice"};
             for (String name : libNames) {
                 try {
                     lookup = SymbolLookup.libraryLookup(name, Arena.global());
@@ -43,11 +36,7 @@ public class NiceBindings {
         }
 
         if (lookup == null) {
-            System.err.println("Warning: libnice not found in system path or custom path.");
-            System.err.println("Actual library search carried out for: " + String.join(", ", libNames));
-            if (customPath != null) {
-                System.err.println("Custom path tried: " + customPath);
-            }
+            System.err.println("Warning: libnice not found in system path or resources.");
             System.err.println("Please ensure libnice-10.dll (or equivalent) and its dependencies (GLib-2.0, etc.) are in your PATH");
             System.err.println("or specify its location with -Dice.lib.path=C:\\path\\to\\libnice-10.dll");
         }
