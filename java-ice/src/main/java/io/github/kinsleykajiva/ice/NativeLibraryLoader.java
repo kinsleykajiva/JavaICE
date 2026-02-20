@@ -17,24 +17,18 @@ public class NativeLibraryLoader {
 
     public static SymbolLookup loadLibrary(String libBaseName) {
         String os = System.getProperty("os.name").toLowerCase(Locale.ENGLISH);
-        String arch = System.getProperty("os.arch").toLowerCase(Locale.ENGLISH);
-        
-        String platform;
+	    
+	    
+	    String platform;
         String extension;
         String prefix = "";
 
         if (os.contains("win")) {
             platform = "windows-x64";
             extension = ".dll";
-            // For libnice on windows it might be libnice-10.dll or nice-10.dll
-            // We'll check both if needed, but based on our packaging it's libnice-10.dll
         } else if (os.contains("linux")) {
             platform = "linux-x64";
             extension = ".so.10";
-            prefix = "lib";
-        } else if (os.contains("mac")) {
-            platform = "macos-x64"; // Placeholder
-            extension = ".dylib";
             prefix = "lib";
         } else {
             throw new RuntimeException("Unsupported OS: " + os);
