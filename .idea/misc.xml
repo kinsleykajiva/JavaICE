@@ -7,6 +7,7 @@
       <list>
         <option value="$PROJECT_DIR$/java-ice/pom.xml" />
         <option value="$PROJECT_DIR$/demo/pom.xml" />
+        <option value="$PROJECT_DIR$/pom.xml" />
       </list>
     </option>
   </component>
