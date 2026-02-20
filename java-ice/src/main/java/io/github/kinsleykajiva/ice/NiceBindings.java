@@ -36,9 +36,7 @@ public class NiceBindings {
         }
 
         if (lookup == null) {
-            System.err.println("Warning: libnice not found in system path or resources.");
-            System.err.println("Please ensure libnice-10.dll (or equivalent) and its dependencies (GLib-2.0, etc.) are in your PATH");
-            System.err.println("or specify its location with -Dice.lib.path=C:\\path\\to\\libnice-10.dll");
+            System.err.println("Warning: libnice not found in system path or resources.Please review the ReadMe file of this project for instructions on how to provide the native library. Native bindings will not be functional.");
         }
 
         final SymbolLookup finalLookup = lookup;
