@@ -89,7 +89,13 @@ public class NiceAgent implements AutoCloseable {
                 MemorySegment sdpPtr = (MemorySegment) NiceBindings.nice_agent_generate_local_sdp.invokeExact(agentHandle);
                 if (sdpPtr.equals(MemorySegment.NULL)) return "";
                 String sdp = sdpPtr.reinterpret(Long.MAX_VALUE).getString(0);
-                // In a real app, we should call g_free(sdpPtr), but here we omit for simplicity or if g_free is not bound
+                try {
+                    if (NiceBindings.g_free != null) {
+                        NiceBindings.g_free.invokeExact(sdpPtr);
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace();
+                }
                 return sdp;
             }
         } catch (Throwable t) {

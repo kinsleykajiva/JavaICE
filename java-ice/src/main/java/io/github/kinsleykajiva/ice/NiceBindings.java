@@ -17,8 +17,8 @@ public class NiceBindings {
     static {
         SymbolLookup lookup = null;
         String[] libNames = {"libnice-10", "nice-10", "libnice"};
-//        String customPath = "C:\\Users\\Kinsley\\IdeaProjects\\JavaICE\\libnice\\build-x-win64\\nice\\libnice-10.dll";
-        String customPath = "./libnice/build-x-win64/nice/libnice-10.dll";
+//        String customPath = "./libnice/build-x-win64/nice/libnice-10.dll"; // windows
+        String customPath = "./libnice/build-x-linux/nice/libnice.so.10"; // linux
 
         if (customPath != null) {
             try {
@@ -84,6 +84,9 @@ public class NiceBindings {
         g_main_loop_run = findHandle(finalLookup, "g_main_loop_run", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
         g_main_loop_quit = findHandle(finalLookup, "g_main_loop_quit", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
         g_object_unref = findHandle(finalLookup, "g_object_unref", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+        g_main_context_unref = findHandle(finalLookup, "g_main_context_unref", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+        g_main_loop_unref = findHandle(finalLookup, "g_main_loop_unref", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+        g_free = findHandle(finalLookup, "g_free", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
     }
 
     private static MethodHandle findHandle(SymbolLookup lookup, String name, FunctionDescriptor desc, Linker.Option... options) {
@@ -103,6 +106,9 @@ public class NiceBindings {
     public static final MethodHandle g_main_loop_run;
     public static final MethodHandle g_main_loop_quit;
     public static final MethodHandle g_object_unref;
+    public static final MethodHandle g_main_context_unref;
+    public static final MethodHandle g_main_loop_unref;
+    public static final MethodHandle g_free;
 
     // Nice compatibility modes
     public static final int NICE_COMPATIBILITY_RFC5245 = 0;

@@ -76,8 +76,8 @@ public class GLibContext implements AutoCloseable {
         executor.shutdownNow();
         if (!loop.equals(MemorySegment.NULL)) {
             try {
-                if (NiceBindings.g_object_unref != null) {
-                    NiceBindings.g_object_unref.invokeExact(loop);
+                if (NiceBindings.g_main_loop_unref != null) {
+                    NiceBindings.g_main_loop_unref.invokeExact(loop);
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -85,8 +85,8 @@ public class GLibContext implements AutoCloseable {
         }
         if (!context.equals(MemorySegment.NULL)) {
             try {
-                if (NiceBindings.g_object_unref != null) {
-                    NiceBindings.g_object_unref.invokeExact(context);
+                if (NiceBindings.g_main_context_unref != null) {
+                    NiceBindings.g_main_context_unref.invokeExact(context);
                 }
             } catch (Throwable t) {
                 t.printStackTrace();
