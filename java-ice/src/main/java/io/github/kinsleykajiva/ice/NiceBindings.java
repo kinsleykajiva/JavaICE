@@ -1,10 +1,6 @@
 package io.github.kinsleykajiva.ice;
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.SymbolLookup;
-import java.lang.foreign.ValueLayout;
+import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 
 /**
@@ -41,6 +37,17 @@ public class NiceBindings {
 
         final SymbolLookup finalLookup = lookup;
 
+        // Initialize networking (important for libnice on some platforms)
+        try {
+            MethodHandle netInit = findHandle(finalLookup, "g_networking_init", FunctionDescriptor.ofVoid());
+            if (netInit != null) {
+                netInit.invokeExact();
+                System.out.println("GLib networking initialized.");
+            }
+        } catch (Throwable t) {
+            System.err.println("Warning: Failed to initialize GLib networking.");
+        }
+
         // Function descriptor for nice_agent_send
         FunctionDescriptor descriptor = FunctionDescriptor.of(
             ValueLayout.JAVA_INT,      // return value (ssize_t)
@@ -74,10 +81,48 @@ public class NiceBindings {
         g_main_context_unref = findHandle(finalLookup, "g_main_context_unref", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
         g_main_loop_unref = findHandle(finalLookup, "g_main_loop_unref", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
         g_free = findHandle(finalLookup, "g_free", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+
+        g_networking_init = findHandle(finalLookup, "g_networking_init", FunctionDescriptor.ofVoid());
+        g_object_set = findHandle(finalLookup, "g_object_set", FunctionDescriptor.ofVoid(
+            ValueLayout.ADDRESS, // object
+            ValueLayout.ADDRESS  // first_property_name
+            // ... variadic (we will use a simplified version for common properties)
+        ));
+
+        g_main_context_push_thread_default = findHandle(finalLookup, "g_main_context_push_thread_default", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+        g_main_context_pop_thread_default = findHandle(finalLookup, "g_main_context_pop_thread_default", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
+        
+        g_signal_connect_data = findHandle(finalLookup, "g_signal_connect_data", FunctionDescriptor.of(ValueLayout.JAVA_LONG, 
+            ValueLayout.ADDRESS, // instance
+            ValueLayout.ADDRESS, // detailed_signal
+            ValueLayout.ADDRESS, // c_handler
+            ValueLayout.ADDRESS, // data
+            ValueLayout.ADDRESS, // destroy_data
+            ValueLayout.JAVA_INT // connect_flags
+        ));
+
+        nice_agent_attach_recv = findHandle(finalLookup, "nice_agent_attach_recv", FunctionDescriptor.ofVoid(
+            ValueLayout.ADDRESS, // agent
+            ValueLayout.JAVA_INT, // stream_id
+            ValueLayout.JAVA_INT, // component_id
+            ValueLayout.ADDRESS, // ctx
+            ValueLayout.ADDRESS, // func
+            ValueLayout.ADDRESS  // data
+        ));
     }
+
+    public static MethodHandle g_object_set_handle(FunctionDescriptor desc) {
+        if (g_object_set_addr == null) return null;
+        return LINKER.downcallHandle(g_object_set_addr, desc);
+    }
+
+    private static MemorySegment g_object_set_addr = null;
 
     private static MethodHandle findHandle(SymbolLookup lookup, String name, FunctionDescriptor desc, Linker.Option... options) {
         if (lookup == null) return null;
+        if (name.equals("g_object_set")) {
+            g_object_set_addr = lookup.find(name).orElse(null);
+        }
         return lookup.find(name).map(addr -> LINKER.downcallHandle(addr, desc, options)).orElse(null);
     }
 
@@ -96,10 +141,25 @@ public class NiceBindings {
     public static final MethodHandle g_main_context_unref;
     public static final MethodHandle g_main_loop_unref;
     public static final MethodHandle g_free;
+    public static final MethodHandle g_networking_init;
+    public static final MethodHandle g_object_set;
+
+    public static final MethodHandle g_main_context_push_thread_default;
+    public static final MethodHandle g_main_context_pop_thread_default;
+    public static final MethodHandle g_signal_connect_data;
+    public static final MethodHandle nice_agent_attach_recv;
 
     // Nice compatibility modes
     public static final int NICE_COMPATIBILITY_RFC5245 = 0;
     public static final int NICE_COMPATIBILITY_DRAFT19 = 1;
     public static final int NICE_COMPATIBILITY_GOOGLE = 2;
     public static final int NICE_COMPATIBILITY_MSN = 3;
+
+    // Nice component states
+    public static final int NICE_COMPONENT_STATE_DISCONNECTED = 0;
+    public static final int NICE_COMPONENT_STATE_GATHERING = 1;
+    public static final int NICE_COMPONENT_STATE_CONNECTING = 2;
+    public static final int NICE_COMPONENT_STATE_CONNECTED = 3;
+    public static final int NICE_COMPONENT_STATE_READY = 4;
+    public static final int NICE_COMPONENT_STATE_FAILED = 5;
 }

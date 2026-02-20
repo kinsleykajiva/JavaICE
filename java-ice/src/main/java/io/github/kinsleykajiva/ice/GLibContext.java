@@ -98,4 +98,34 @@ public class GLibContext implements AutoCloseable {
     public MemorySegment getContext() {
         return context;
     }
+
+    /**
+     * Sets this context as the thread-default context for the current thread.
+     */
+    public void pushThreadDefault() {
+        if (!context.equals(MemorySegment.NULL)) {
+            try {
+                if (NiceBindings.g_main_context_push_thread_default != null) {
+                    NiceBindings.g_main_context_push_thread_default.invokeExact(context);
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Removes this context as the thread-default context for the current thread.
+     */
+    public void popThreadDefault() {
+        if (!context.equals(MemorySegment.NULL)) {
+            try {
+                if (NiceBindings.g_main_context_pop_thread_default != null) {
+                    NiceBindings.g_main_context_pop_thread_default.invokeExact(context);
+                }
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }
+    }
 }

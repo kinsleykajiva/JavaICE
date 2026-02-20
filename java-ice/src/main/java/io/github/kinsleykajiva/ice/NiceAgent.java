@@ -1,7 +1,10 @@
 package io.github.kinsleykajiva.ice;
 
 import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 
 /**
  * High-level wrapper for NiceAgent.
@@ -73,8 +76,61 @@ public class NiceAgent implements AutoCloseable {
      */
     public void setStunServer(String server, int port) {
         try (var localArena = Arena.ofConfined()) {
+            MemorySegment cStunServer = localArena.allocateFrom("stun-server");
             MemorySegment cServer = localArena.allocateFrom(server);
-            // Placeholder: NiceBindings.g_object_set(agentHandle, localArena.allocateFrom("stun-server"), cServer, ...);
+            
+            // string property
+            FunctionDescriptor sDesc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.ADDRESS);
+            MethodHandle sHandle = NiceBindings.g_object_set_handle(sDesc);
+            if (sHandle != null) {
+                sHandle.invokeExact(agentHandle, cStunServer, cServer, MemorySegment.NULL);
+            }
+
+            // int property
+            MemorySegment cStunPort = localArena.allocateFrom("stun-server-port");
+            FunctionDescriptor iDesc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.ADDRESS);
+            MethodHandle iHandle = NiceBindings.g_object_set_handle(iDesc);
+            if (iHandle != null) {
+                iHandle.invokeExact(agentHandle, cStunPort, port, MemorySegment.NULL);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
+    /**
+     * Sets the controlling mode of the agent.
+     * 
+     * @param controlling True for controlling, false for controlled.
+     */
+    public void setControllingMode(boolean controlling) {
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment cProp = localArena.allocateFrom("controlling-mode");
+            // specialized handle for boolean (int) property: g_object_set(obj, name, int, NULL)
+            FunctionDescriptor desc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.ADDRESS);
+            MethodHandle handle = NiceBindings.g_object_set_handle(desc);
+            if (handle != null) {
+                handle.invokeExact(agentHandle, cProp, controlling ? 1 : 0, MemorySegment.NULL);
+            }
+            System.out.println("Property set: controlling-mode=" + controlling);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
+    /**
+     * Disables ICE-TCP and UPnP for faster gathering in this demo.
+     */
+    public void disableExtraFeatures() {
+        try (var localArena = Arena.ofConfined()) {
+            FunctionDescriptor desc = FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.ADDRESS);
+            MethodHandle handle = NiceBindings.g_object_set_handle(desc);
+            if (handle != null) {
+                handle.invokeExact(agentHandle, localArena.allocateFrom("ice-tcp"), 0, MemorySegment.NULL);
+                handle.invokeExact(agentHandle, localArena.allocateFrom("upnp"), 0, MemorySegment.NULL);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
         }
     }
 
@@ -139,5 +195,64 @@ public class NiceAgent implements AutoCloseable {
 
     public MemorySegment getHandle() {
         return agentHandle;
+    }
+
+    /**
+     * Connects a signal to the agent.
+     * 
+     * @param signalName The signal name (e.g., "candidate-gathering-done").
+     * @param callback The callback memory segment (created via Linker upcall).
+     * @param data Optional user data.
+     * @return The signal handler ID.
+     */
+    public long connectSignal(String signalName, MemorySegment callback, MemorySegment data) {
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment cSignal = localArena.allocateFrom(signalName);
+            if (NiceBindings.g_signal_connect_data != null) {
+                return (long) NiceBindings.g_signal_connect_data.invokeExact(agentHandle, cSignal, callback, data, MemorySegment.NULL, 0);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * Attaches a receiver to a stream component.
+     * 
+     * @param streamId The stream ID.
+     * @param componentId The component ID.
+     * @param context The GLib main context (can be null for thread-default).
+     * @param callback The receiver callback (created via Linker upcall).
+     * @param data Optional user data.
+     */
+    public void attachReceiver(int streamId, int componentId, MemorySegment context, MemorySegment callback, MemorySegment data) {
+        try {
+            if (NiceBindings.nice_agent_attach_recv != null) {
+                NiceBindings.nice_agent_attach_recv.invokeExact(agentHandle, streamId, componentId, context, callback, data);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+    }
+
+    /**
+     * Sends data over a stream component.
+     * 
+     * @param streamId The stream ID.
+     * @param componentId The component ID.
+     * @param data The data to send.
+     * @return Number of bytes sent, or negative on error.
+     */
+    public int send(int streamId, int componentId, byte[] data) {
+        try (var localArena = Arena.ofConfined()) {
+            MemorySegment buf = localArena.allocateFrom(ValueLayout.JAVA_BYTE, data);
+            if (NiceBindings.nice_agent_send != null) {
+                return (int) NiceBindings.nice_agent_send.invokeExact(agentHandle, streamId, componentId, (int)data.length, buf);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return -1;
     }
 }
