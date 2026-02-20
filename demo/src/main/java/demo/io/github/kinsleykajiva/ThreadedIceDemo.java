@@ -1,4 +1,4 @@
-package demo;
+package demo.io.github.kinsleykajiva;
 
 import io.github.kinsleykajiva.ice.*;
 import java.lang.foreign.*;
