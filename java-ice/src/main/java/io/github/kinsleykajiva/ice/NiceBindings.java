@@ -17,8 +17,8 @@ public class NiceBindings {
     static {
         SymbolLookup lookup = null;
         String[] libNames = {"libnice-10", "nice-10", "libnice"};
-//        String customPath = "C:\\Users\\Kinsley\\IdeaProjects\\JavaICE\\libnice\\build\\nice-x-win64\\libnice-10.dll";
-        String customPath = "./libnice/build/nice-x-win64/libnice-10.dll";
+//        String customPath = "C:\\Users\\Kinsley\\IdeaProjects\\JavaICE\\libnice\\build-x-win64\\nice\\libnice-10.dll";
+        String customPath = "./libnice/build-x-win64/nice/libnice-10.dll";
 
         if (customPath != null) {
             try {
