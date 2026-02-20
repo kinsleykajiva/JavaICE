@@ -10,6 +10,32 @@ Toolchain provider: MSYS2
 
 ---
 
+# How It Works
+
+JavaICE leverages **Project Panama** (Java 22+) to interface directly with the `libnice` C library without needing JNI headers.
+
+### 1. Native Library Loading
+The `NativeLibraryLoader` extracts the appropriate DLL (Windows) or Shared Object (Linux) from the JAR's resources to a temporary folder and loads it using `SymbolLookup.libraryLookup`.
+
+### 2. ICE Agent Initialization
+The `NiceAgent` class wraps the native `NiceAgent` object. It handles:
+- Setting the controlling mode.
+- Adding streams and components.
+- Managing the GLib main loop (required by libnice for asynchronous operations).
+
+### 3. Candidate Gathering
+When `gatherCandidates()` is called, libnice starts searching for local host addresses, reflexive (STUN), and relayed (TURN) addresses. The Java layer waits (or listens for signals) until gathering is complete.
+
+### 4. SDP Generation
+Once candidates are gathered, JavaICE can generate an **SDP (Session Description Protocol)** snippet. This snippet (containing `ice-ufrag`, `ice-pwd`, and `candidate` lines) can be sent to a remote peer.
+
+### 5. SDP Exchange & Connectivity
+- **Local SDP**: Your agent's connection info.
+- **Remote SDP**: The other agent's connection info.
+When you call `parseRemoteSdp()`, JavaICE feeds the remote candidates into the native `libnice` agent, which then begins the connectivity checks to establish a P2P connection.
+
+---
+
 # 1. Install MSYS2
 
 1. Download MSYS2 from:
@@ -193,4 +219,59 @@ $env:PATH += ";C:\msys64\mingw64\bin"
 
 ---
 
-If you later need a version tailored specifically for Java bindings (JNI or Panama), that requires a slightly adjusted build configuration.
+# Examples & Run Logs
+
+## SDP Demo (`SdpDemo`)
+This demo initializes a libnice agent, gathers candidates, and generates a Local SDP. It also demonstrates parsing a remote SDP.
+
+```text
+Starting libnice SDP Demo...
+Attempting to load native library from resource: /natives/windows-x64/libnice-10.dll
+Extracted native library from /natives/windows-x64/libnice-10.dll to: C:\Users\Kinsley\AppData\Local\Temp\java-ice-natives-302889424220344620\libnice-10.dll
+WARNING: A restricted method in java.lang.foreign.SymbolLookup has been called
+...
+Added stream: 1
+Gathering candidates...
+Waiting for candidates (5s)...
+Generated Local SDP:
+-------------------
+m=- 55090 ICE/SDP
+c=IN IP4 192.168.0.101
+a=ice-ufrag:682A
+a=ice-pwd:oHmR9Xh0wCuRmHiBYgboQn
+a=candidate:1 1 UDP 2015363327 192.168.0.101 54001 typ host
+...
+-------------------
+Parsed remote SDP, result: 27
+```
+
+## Multi-threaded ICE Demo (`ThreadedIceDemo`)
+This demo simulates two agents (`AgentA` and `AgentB`) running in separate threads, gathering candidates independently.
+
+```text
+--- Multi-threaded ICE Demo Starting ---
+[AgentA] Thread started. Initializing agent...
+[AgentB] Thread started. Initializing agent...
+Property set: controlling-mode=false
+Property set: controlling-mode=true
+[AgentA] Added stream 1. Gathering candidates... Success: true
+[AgentB] Added stream 1. Gathering candidates... Success: true
+...
+[AgentB] Local SDP generated:
+m=- 59252 ICE/SDP
+c=IN IP4 192.168.0.101
+a=ice-ufrag:Pmte
+...
+[AgentA] Local SDP generated:
+m=- 59253 ICE/SDP
+c=IN IP4 192.168.0.101
+a=ice-ufrag:A6+X
+...
+[AgentA] Waiting for peer exchange...
+[AgentB] Waiting for peer exchange...
+[AgentB] Received remote SDP. Parsing...
+[AgentA] Received remote SDP. Parsing...
+Demo timed out after 60 seconds!
+--- Multi-threaded ICE Demo Finished ---
+```
+
