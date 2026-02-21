@@ -11,7 +11,7 @@ import io.github.kinsleykajiva.ice.NiceStream;
  * Advanced demo showcasing candidate inspection and stream state management.
  */
 public class AdvancedIceDemo {
-    public static void main(String[] args) throws InterruptedException {
+    static void main() {
         System.out.println("Starting Advanced libnice Demo...");
 
         try (NiceAgent agent = new NiceAgent(java.lang.foreign.MemorySegment.NULL, NiceBindings.NICE_COMPATIBILITY_RFC5245)) {

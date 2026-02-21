@@ -8,7 +8,7 @@ import io.github.kinsleykajiva.ice.NiceBindings;
  * Demo application showing libnice SDP generation and parsing.
  */
 public class SdpDemo {
-    public static void main(String[] args) {
+    static void main() {
         
         System.out.println("Starting libnice SDP Demo...");
 
