@@ -41,7 +41,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/master'
         with:
           tag_name: v${{ steps.get_version.outputs.VERSION }}-${{ github.run_number }}
-          name: Release v${{ steps.get_version.outputs.VERSION }}
+          name: Release Latest
           draft: false
           prerelease: false
           files: |

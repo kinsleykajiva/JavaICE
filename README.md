@@ -2,8 +2,10 @@
 
 ![Java Version](https://img.shields.io/badge/Java-22%2B-orange)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.kinsleykajiva/java-ice.svg)](https://search.maven.org/artifact/io.github.kinsleykajiva/java-ice)
 ![Topic](https://img.shields.io/badge/Topic-Networking-green)
 ![ICE](https://img.shields.io/badge/Protocol-ICE-brightgreen)
+
 
 JavaICE provides high-level Java wrappers for [libnice](https://github.com/libnice/libnice), the GLib-based ICE (Interactive Connectivity Establishment) implementation. Leveraging **Project Panama** (Java 22+), it enables robust peer-to-peer connectivity and NAT traversal directly from Java.
 
@@ -36,8 +38,9 @@ Add JavaICE to your `pom.xml`:
 <dependency>
     <groupId>io.github.kinsleykajiva</groupId>
     <artifactId>java-ice</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 </dependency>
+
 ```
 
 ### Basic Usage

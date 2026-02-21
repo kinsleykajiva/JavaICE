@@ -9,9 +9,7 @@ import io.github.kinsleykajiva.ice.NiceBindings;
  */
 public class SdpDemo {
     public static void main(String[] args) {
-        try {
-            java.nio.file.Files.writeString(java.nio.file.Path.of("demo_started.txt"), "Demo started at " + java.time.LocalDateTime.now());
-        } catch (Exception e) {}
+        
         System.out.println("Starting libnice SDP Demo...");
 
         try (GLibContext glib = new GLibContext();
