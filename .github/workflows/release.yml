@@ -30,8 +30,8 @@ jobs:
         # Note: This might fail if natives are not in src/main/resources/natives
         # I will move natives to src/main/resources for portable builds but will have both OSs.
 
-      - name: Setup GPG
-        uses: samuelmeuli/action-gpg@v1
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
         with:
           gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
