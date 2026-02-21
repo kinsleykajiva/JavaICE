@@ -6,7 +6,7 @@
 
     <groupId>io.github.kinsleykajiva</groupId>
     <artifactId>java-ice</artifactId>
-    <version>0.1.0</version>
+    <version>0.2.0</version>
 
 
     <properties>
@@ -49,6 +49,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
             <plugin>
