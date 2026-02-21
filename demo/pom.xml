@@ -12,6 +12,10 @@
 
     <artifactId>demo</artifactId>
 
+    <properties>
+        <maven.deploy.skip>true</maven.deploy.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>io.github.kinsleykajiva</groupId>
