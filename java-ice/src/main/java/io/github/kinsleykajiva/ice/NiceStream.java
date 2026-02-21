@@ -1,7 +1,5 @@
 package io.github.kinsleykajiva.ice;
 
-import java.lang.foreign.MemorySegment;
-
 /**
  * Represents a libnice stream.
  */
@@ -25,7 +23,13 @@ public class NiceStream {
      * @return The component state (NiceComponentState).
      */
     public int getComponentState(int componentId) {
-        // Placeholder: return NiceBindings.nice_agent_get_component_state(agent.getHandle(), streamId, componentId);
+        try {
+            if (NiceBindings.nice_agent_get_component_state != null) {
+                return (int) NiceBindings.nice_agent_get_component_state.invokeExact(agent.getHandle(), streamId, componentId);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         return 0;
     }
 
@@ -37,8 +41,7 @@ public class NiceStream {
      * @return Number of bytes sent.
      */
     public int send(int componentId, byte[] data) {
-        // Use Linker.Option.critical if possible for this call in the low-level bindings.
-        // Placeholder logic
-        return data.length;
+        return agent.send(streamId, componentId, data);
     }
 }
+

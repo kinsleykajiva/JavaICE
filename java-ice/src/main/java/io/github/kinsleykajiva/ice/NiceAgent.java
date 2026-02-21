@@ -24,7 +24,8 @@ public class NiceAgent implements AutoCloseable {
         this.arena = Arena.ofShared();
         try {
             if (NiceBindings.nice_agent_new != null) {
-                this.agentHandle = (MemorySegment) NiceBindings.nice_agent_new.invokeExact(mainContext, compatibility);
+                MemorySegment ctx = (mainContext == null) ? MemorySegment.NULL : mainContext;
+                this.agentHandle = (MemorySegment) NiceBindings.nice_agent_new.invokeExact(ctx, compatibility);
             } else {
                 this.agentHandle = MemorySegment.NULL;
             }
@@ -32,6 +33,7 @@ public class NiceAgent implements AutoCloseable {
             throw new RuntimeException("Failed to create NiceAgent", t);
         }
     }
+
 
     /**
      * Adds a new stream to the agent.
@@ -255,4 +257,54 @@ public class NiceAgent implements AutoCloseable {
         }
         return -1;
     }
+
+    /**
+     * Gets the list of local candidates for a component.
+     * 
+     * @param streamId The stream ID.
+     * @param componentId The component ID.
+     * @return A list of NiceCandidate objects.
+     */
+    public java.util.List<NiceCandidate> getLocalCandidates(int streamId, int componentId) {
+        return getCandidates(NiceBindings.nice_agent_get_local_candidates, streamId, componentId);
+    }
+
+    /**
+     * Gets the list of remote candidates for a component.
+     * 
+     * @param streamId The stream ID.
+     * @param componentId The component ID.
+     * @return A list of NiceCandidate objects.
+     */
+    public java.util.List<NiceCandidate> getRemoteCandidates(int streamId, int componentId) {
+        return getCandidates(NiceBindings.nice_agent_get_remote_candidates, streamId, componentId);
+    }
+
+    private java.util.List<NiceCandidate> getCandidates(MethodHandle method, int streamId, int componentId) {
+        java.util.List<NiceCandidate> candidates = new java.util.ArrayList<>();
+        if (method == null) return candidates;
+
+        try {
+            MemorySegment listPtr = (MemorySegment) method.invokeExact(agentHandle, streamId, componentId);
+            MemorySegment current = listPtr;
+            
+            while (current != null && !current.equals(MemorySegment.NULL)) {
+                MemorySegment candidatePtr = (MemorySegment) NiceBindings.GSLIST_DATA.get(current.reinterpret(NiceBindings.GSLIST_LAYOUT.byteSize()), 0L);
+                if (candidatePtr != null && !candidatePtr.equals(MemorySegment.NULL)) {
+
+                    candidates.add(new NiceCandidate(candidatePtr.reinterpret(NiceBindings.NICE_CANDIDATE_LAYOUT.byteSize())));
+                }
+                current = (MemorySegment) NiceBindings.GSLIST_NEXT.get(current.reinterpret(NiceBindings.GSLIST_LAYOUT.byteSize()), 0L);
+            }
+
+
+            if (listPtr != null && !listPtr.equals(MemorySegment.NULL) && NiceBindings.g_slist_free != null) {
+                NiceBindings.g_slist_free.invokeExact(listPtr);
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
+        return candidates;
+    }
 }
+

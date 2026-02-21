@@ -55,6 +55,25 @@ System.out.println("Local SDP:\n" + localSdp);
 agent.parseRemoteSdp(remoteSdp);
 ```
 
+### 🛠️ Advanced Use
+
+For fine-grained control, you can interact with candidates and streams directly:
+
+```java
+// List local candidates
+List<NiceCandidate> candidates = agent.getLocalCandidates(streamId, 1);
+for (NiceCandidate c : candidates) {
+    System.out.printf("Candidate: %s:%d (Type: %d, Foundation: %s)\n", 
+        c.getAddress(), c.getPort(), c.getType(), c.getFoundation());
+}
+
+// Check stream component state
+NiceStream stream = new NiceStream(agent, streamId);
+int state = stream.getComponentState(1);
+System.out.println("Component 1 state: " + state);
+```
+
+
 ---
 
 ## How It Works

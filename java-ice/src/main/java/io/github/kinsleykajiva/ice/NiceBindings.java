@@ -1,7 +1,15 @@
 package io.github.kinsleykajiva.ice;
 
-import java.lang.foreign.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.StructLayout;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 
 /**
  * Low-level bindings container.
@@ -109,7 +117,27 @@ public class NiceBindings {
             ValueLayout.ADDRESS, // func
             ValueLayout.ADDRESS  // data
         ));
+
+        nice_agent_get_component_state = findHandle(finalLookup, "nice_agent_get_component_state",
+            FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+        
+        nice_agent_get_local_candidates = findHandle(finalLookup, "nice_agent_get_local_candidates",
+            FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+        
+        nice_agent_get_remote_candidates = findHandle(finalLookup, "nice_agent_get_remote_candidates",
+            FunctionDescriptor.of(ValueLayout.ADDRESS, ValueLayout.ADDRESS, ValueLayout.JAVA_INT, ValueLayout.JAVA_INT));
+
+        nice_address_to_string = findHandle(finalLookup, "nice_address_to_string",
+            FunctionDescriptor.ofVoid(ValueLayout.ADDRESS, ValueLayout.ADDRESS));
+        
+        nice_address_get_port = findHandle(finalLookup, "nice_address_get_port",
+            FunctionDescriptor.of(ValueLayout.JAVA_INT, ValueLayout.ADDRESS));
+
+        g_slist_free = findHandle(finalLookup, "g_slist_free", FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
     }
+
+
+
 
     public static MethodHandle g_object_set_handle(FunctionDescriptor desc) {
         if (g_object_set_addr == null) return null;
@@ -148,6 +176,58 @@ public class NiceBindings {
     public static final MethodHandle g_main_context_pop_thread_default;
     public static final MethodHandle g_signal_connect_data;
     public static final MethodHandle nice_agent_attach_recv;
+    public static final MethodHandle nice_agent_get_component_state;
+    public static final MethodHandle nice_agent_get_local_candidates;
+    public static final MethodHandle nice_agent_get_remote_candidates;
+    public static final MethodHandle nice_address_to_string;
+    public static final MethodHandle nice_address_get_port;
+    public static final MethodHandle g_slist_free;
+
+    // Struct Layouts
+    public static final StructLayout GSLIST_LAYOUT = MemoryLayout.structLayout(
+        ValueLayout.ADDRESS.withName("data"),
+        ValueLayout.ADDRESS.withName("next")
+    ).withName("GSList");
+
+    // VarHandles for GSList
+    public static final VarHandle GSLIST_DATA = GSLIST_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("data"));
+    public static final VarHandle GSLIST_NEXT = GSLIST_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("next"));
+
+    // Simple NiceAddress (opaque for now, but we'll provide helper to stringify)
+    // Sized to match sockaddr_in6 (28 bytes) which is the largest candidate address type.
+    public static final StructLayout NICE_ADDRESS_LAYOUT = MemoryLayout.structLayout(
+        MemoryLayout.sequenceLayout(28, ValueLayout.JAVA_BYTE).withName("opaque")
+    ).withName("NiceAddress");
+
+
+
+    public static final StructLayout NICE_CANDIDATE_LAYOUT = MemoryLayout.structLayout(
+        ValueLayout.JAVA_INT.withName("type"),
+        ValueLayout.JAVA_INT.withName("transport"),
+        NICE_ADDRESS_LAYOUT.withName("addr"),
+        NICE_ADDRESS_LAYOUT.withName("base_addr"),
+        ValueLayout.JAVA_INT.withName("priority"),
+        ValueLayout.JAVA_INT.withName("stream_id"),
+        ValueLayout.JAVA_INT.withName("component_id"),
+        MemoryLayout.sequenceLayout(33, ValueLayout.JAVA_BYTE).withName("foundation"),
+        MemoryLayout.paddingLayout(3), // alignment
+        ValueLayout.ADDRESS.withName("username"),
+        ValueLayout.ADDRESS.withName("password"),
+        NICE_ADDRESS_LAYOUT.withName("turn_addr"),
+        ValueLayout.JAVA_INT.withName("turn_transport"),
+        MemoryLayout.paddingLayout(4) // alignment/extensibility
+    ).withName("NiceCandidate");
+
+    // VarHandles for NiceCandidate
+    public static final VarHandle CANDIDATE_TYPE = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("type"));
+    public static final VarHandle CANDIDATE_TRANSPORT = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("transport"));
+    public static final VarHandle CANDIDATE_PRIORITY = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("priority"));
+    public static final VarHandle CANDIDATE_STREAM_ID = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("stream_id"));
+    public static final VarHandle CANDIDATE_COMPONENT_ID = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("component_id"));
+    
+    // VarHandles for strings (addresses of strings)
+    public static final VarHandle CANDIDATE_USERNAME = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("username"));
+    public static final VarHandle CANDIDATE_PASSWORD = NICE_CANDIDATE_LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("password"));
 
     // Nice compatibility modes
     public static final int NICE_COMPATIBILITY_RFC5245 = 0;
@@ -162,4 +242,11 @@ public class NiceBindings {
     public static final int NICE_COMPONENT_STATE_CONNECTED = 3;
     public static final int NICE_COMPONENT_STATE_READY = 4;
     public static final int NICE_COMPONENT_STATE_FAILED = 5;
+
+    // Nice transport types
+    public static final int NICE_CANDIDATE_TRANSPORT_UDP = 0;
+    public static final int NICE_CANDIDATE_TRANSPORT_TCP_PASSIVE = 1;
+    public static final int NICE_CANDIDATE_TRANSPORT_TCP_ACTIVE = 2;
+    public static final int NICE_CANDIDATE_TRANSPORT_TCP_SO = 3;
 }
+
