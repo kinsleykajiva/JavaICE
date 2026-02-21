@@ -30,6 +30,22 @@ jobs:
         # Note: This might fail if natives are not in src/main/resources/natives
         # I will move natives to src/main/resources for portable builds but will have both OSs.
 
+      - name: Setup GPG
+        uses: samuelmeuli/action-gpg@v1
+        with:
+          gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
+
+      - name: Deploy to Maven Central
+        run: |
+          mvn -B clean deploy \
+            -Dmaven.deploy.skip=false \
+            -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PASSPHRASE }} \
+            -pl java-ice -am
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+
       - name: Get project version
         id: get_version
         run: |
