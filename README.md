@@ -105,23 +105,62 @@ JavaICE (via libnice) implements a comprehensive suite of IETF standards:
 
 ## Examples & Run Logs
 
-### SDP Demo (`SdpDemo`)
+### 1. SDP Demo (`SdpDemo`)
 Initializes an agent, gathers candidates, and generates/parses SDP.
 
 ```text
 Starting libnice SDP Demo...
-Attempting to load native library from resource: /natives/windows-x64/libnice-10.dll
-Extracted native library to: C:\Users\...\libnice-10.dll
 Added stream: 1
 Gathering candidates...
+Waiting for candidates (5s)...
 Generated Local SDP:
-...
+-------------------
 m=- 55090 ICE/SDP
 c=IN IP4 192.168.0.101
 a=ice-ufrag:682A
+a=ice-pwd:oHmR9Xh0wCuRmHiBYgboQn
+a=candidate:1 1 UDP 2015363327 192.168.0.101 54001 typ host
 ...
+-------------------
 Parsed remote SDP, result: 27
 ```
+
+### 2. Multi-threaded ICE Demo (`ThreadedIceDemo`)
+Simulates two agents (`AgentA` and `AgentB`) exchanging SDP and candidates in separate threads.
+
+```text
+--- Multi-threaded ICE Demo Starting ---
+[AgentA] Thread started. Initializing agent...
+[AgentB] Thread started. Initializing agent...
+[AgentA] Added stream 1. Gathering candidates... Success: true
+[AgentB] Added stream 1. Gathering candidates... Success: true
+[AgentB] Local SDP generated:
+m=- 59252 ICE/SDP
+...
+[AgentA] Received remote SDP. Parsing...
+[AgentB] Received remote SDP. Parsing...
+--- Multi-threaded ICE Demo Finished ---
+```
+
+### 3. Advanced Demo (`AdvancedIceDemo`)
+Directly inspects gathered candidates and monitors component states using high-level wrappers.
+
+```text
+Starting Advanced libnice Demo...
+Gathering candidates for stream 1...
+
+--- Local Candidates ---
+  [Host] 192.168.0.101:59685 (Type: 0, Transport: UDP, Foundation: 1)
+  [Host] 192.168.0.101:0 (Type: 0, Transport: TCP-PASSIVE, Foundation: 2)
+  [Host] 192.168.0.101:65502 (Type: 0, Transport: TCP-ACTIVE, Foundation: 3)
+
+--- Stream Status ---
+  Component 1 state ID: 1
+  Component 1 state: Gathering
+
+Demo completed.
+```
+
 
 ---
 
