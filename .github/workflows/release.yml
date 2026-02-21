@@ -28,7 +28,7 @@ jobs:
       - name: Build with Maven
         run: mvn -B package -DskipTests
         # Note: This might fail if natives are not in src/main/resources/natives
-        # Recommend moving natives to src/main/resources for portable builds.
+        # I will move natives to src/main/resources for portable builds but will have both OSs.
 
       - name: Get project version
         id: get_version
