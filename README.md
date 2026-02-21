@@ -38,8 +38,9 @@ Add JavaICE to your `pom.xml`:
 <dependency>
     <groupId>io.github.kinsleykajiva</groupId>
     <artifactId>java-ice</artifactId>
-    <version>0.0.2</version>
+    <version>0.1.0</version>
 </dependency>
+
 
 ```
 
